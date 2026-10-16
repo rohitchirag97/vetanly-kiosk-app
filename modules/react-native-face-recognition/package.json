@@ -1,0 +1,117 @@
+{
+  "name": "react-native-vision-camera-face-recognizer",
+  "version": "0.1.0",
+  "description": "Offline on-device face detection and recognition for React Native VisionCamera, built with Nitro and ONNX Runtime",
+  "main": "./lib/commonjs/index.js",
+  "module": "./lib/module/index.js",
+  "types": "./lib/typescript/src/index.d.ts",
+  "react-native": "src/index",
+  "source": "src/index",
+  "scripts": {
+    "fetch-models": "bash scripts/fetch-models.sh",
+    "typecheck": "tsc --noEmit",
+    "clean": "git clean -dfX",
+    "build": "bun run typecheck && bob build",
+    "format:cpp": "bash scripts/format-cpp.sh write",
+    "format:cpp:check": "bash scripts/format-cpp.sh check",
+    "lint:cpp": "bash scripts/lint-cpp.sh",
+    "codegen": "nitrogen --logLevel=\"debug\" && bun run build",
+    "postcodegen": "bun --cwd ../.. pod"
+  },
+  "keywords": [
+    "react-native",
+    "vision-camera",
+    "face-detection",
+    "face-recognition",
+    "react-native-vision-camera-face-recognizer"
+  ],
+  "files": [
+    "src",
+    "models",
+    "react-native.config.js",
+    "lib",
+    "nitrogen",
+    "cpp",
+    "third_party/onnxruntime/android/headers",
+    "third_party/onnxruntime/android/arm64-v8a",
+    "third_party/qnn/android/arm64-v8a",
+    "nitro.json",
+    "android/build.gradle",
+    "android/fix-prefab.gradle",
+    "android/gradle.properties",
+    "android/CMakeLists.txt",
+    "android/src",
+    "ios/**/*.h",
+    "ios/**/*.m",
+    "ios/**/*.mm",
+    "ios/**/*.cpp",
+    "ios/**/*.swift",
+    "app.plugin.js",
+    "*.podspec",
+    "README.md"
+  ],
+  "repository": "https://github.com/patrickkabwe/react-native-vision-camera-face-recognizer.git",
+  "author": "Patrick Kabwe",
+  "license": "MIT",
+  "bugs": "https://github.com/patrickkabwe/react-native-vision-camera-face-recognizer/issues",
+  "homepage": "https://github.com/patrickkabwe/react-native-vision-camera-face-recognizer#readme",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*",
+    "react-native-nitro-image": "*",
+    "react-native-nitro-modules": "*",
+    "react-native-vision-camera": "*"
+  },
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "@react-native",
+      "prettier"
+    ],
+    "plugins": [
+      "prettier"
+    ],
+    "rules": {
+      "prettier/prettier": [
+        "warn",
+        {
+          "quoteProps": "consistent",
+          "singleQuote": true,
+          "tabWidth": 2,
+          "trailingComma": "es5",
+          "useTabs": false
+        }
+      ]
+    }
+  },
+  "eslintIgnore": [
+    "node_modules/",
+    "lib/"
+  ],
+  "prettier": {
+    "quoteProps": "consistent",
+    "singleQuote": true,
+    "tabWidth": 2,
+    "trailingComma": "es5",
+    "useTabs": false,
+    "semi": false
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      "commonjs",
+      "module",
+      [
+        "typescript",
+        {
+          "project": "tsconfig.json"
+        }
+      ]
+    ]
+  }
+}

@@ -1,5 +1,11 @@
 {
   "extends": "@react-native/typescript-config",
+  "compilerOptions": {
+    // The vendored face module ships TypeScript source only; Metro reads it through its "react-native" field.
+    "paths": {
+      "react-native-vision-camera-face-recognizer": ["./modules/react-native-face-recognition/src"]
+    }
+  },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["**/node_modules", "**/Pods"]
 }

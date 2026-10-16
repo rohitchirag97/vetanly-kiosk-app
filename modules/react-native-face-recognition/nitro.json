@@ -1,0 +1,26 @@
+{
+  "$schema": "https://nitro.margelo.com/nitro.schema.json",
+  "cxxNamespace": [
+    "facerecognizer"
+  ],
+  "ios": {
+    "iosModuleName": "FaceRecognizer"
+  },
+  "android": {
+    "androidNamespace": [
+      "facerecognizer"
+    ],
+    "androidCxxLibName": "FaceRecognizer"
+  },
+  "autolinking": {
+    "FaceRecognizerFactory": {
+      "all": {
+        "language": "c++",
+        "implementationClassName": "HybridFaceRecognizerFactory"
+      }
+    }
+  },
+  "ignorePaths": [
+    "**/node_modules"
+  ]
+}

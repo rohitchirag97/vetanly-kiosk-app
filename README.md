@@ -1,97 +1,160 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Vetanly Kiosk
 
-# Getting Started
+An Android app that turns a phone or tablet into a face-recognition attendance kiosk for
+[Vetanly](https://vetanly.com). Employees look at the camera to check in or out, with no card,
+PIN or touch needed.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+Face recognition runs **on the device** (detection, liveness check and matching), using a
+recognizer vendored from Margelo's
+[face-recognition-demo](https://margelo.com/blog/on-device-face-recognition-react-native) (MIT).
+Only face templates (numbers, not photos) and attendance punches go to the Vetanly server.
 
-## Step 1: Start Metro
+Built with React Native 0.87 (New Architecture), VisionCamera 5, Nitro Modules and
+react-native-worklets.
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## How it works
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+- **Pairing.** In the Vetanly dashboard, go to **Kiosks** and create a kiosk. It shows a pairing
+  code. Enter the code on the kiosk. The kiosk receives its own API key and stores it in the
+  Android Keystore, so no one has to sign in on the device. Unpairing a kiosk, or rotating its
+  key in the dashboard, logs the device out.
+- **Status.** The kiosk sends a regular heartbeat, so the dashboard shows each kiosk as
+  Online, Offline or Not connected.
+- **Enrolling faces.** Tap **Enroll** and enter a manager's 6-digit enrollment code (issued in the
+  dashboard). Pick the employee and capture 5 samples. Enrolled faces sync to every kiosk in the
+  organization, so each person enrolls once, not once per kiosk.
+- **Punching.** The camera runs all the time. A recognized face with a live-person check records
+  the next punch automatically: check-in, then check-out.
+  - Repeat scans are ignored for **15 minutes** after a punch, so walking past the kiosk does not
+    punch again. The server applies the same rule.
+  - A check-out after that window moves the check-out time later, which records overtime.
+  - Night shifts that cross midnight are handled by the server: a punch belongs to the nearest
+    shift, not the calendar date.
+- **Offline.** Employees and face templates are cached on the device (refreshed every 5 minutes),
+  so recognition keeps working without internet. Punches made offline are queued as
+  *Saved offline* and sent, oldest first, when the connection returns. Each punch carries a unique
+  ID, so a retry is never recorded twice.
+- **Feedback.** A success or error tone and vibration after each punch (each can be switched off).
 
-```sh
-# Using npm
-npm start
+### Settings (manager code required)
 
-# OR using Yarn
-yarn start
+| Setting | What it does |
+|---|---|
+| Keep screen awake | The screen never turns off. |
+| Show over lock screen | The kiosk opens above the lock screen after a reboot or power cut. |
+| Pin app | Uses Android screen pinning so people cannot leave the app. |
+| Require automatic date & time | Warns when the phone's clock is set by hand, so punch times can be trusted. |
+| Show network | Shows Wi-Fi or mobile signal strength on screen. |
+| Sound / Vibration | Punch feedback. |
+
+Device controls start **off** so each organization opts in; sound and vibration start on.
+The app always stays in portrait.
+
+## Requirements
+
+- Node.js 22.11 or later and [Bun](https://bun.sh) (the repo uses `bun.lock` and Bun workspaces).
+- JDK 17 and the Android SDK (via Android Studio). See React Native's
+  [environment setup](https://reactnative.dev/docs/set-up-your-environment).
+- An Android phone or tablet with Android 7.0 (API 24) or later and a front camera.
+  A mid-range phone or better gives the fastest recognition.
+- The Vetanly server running and reachable from the phone (see `../server`).
+
+iOS is not supported yet. The native kiosk controls (`KioskDevice`) are Android only.
+
+## Run on a phone
+
+1. **Point the app at your server.** Edit `src/config.ts` and set `API_URL` to an address the
+   phone can reach. During development that is your computer's LAN IP, for example
+   `http://192.168.0.178:8000/api/v1`. `localhost` will not work on a phone.
+2. **Install dependencies**
+
+   ```sh
+   bun install
+   ```
+
+3. **Connect the phone.** Turn on *Developer options* and *USB debugging*, connect it by USB and
+   check that it shows up:
+
+   ```sh
+   adb devices
+   ```
+
+4. **Start Metro** (keep this terminal open):
+
+   ```sh
+   bun start
+   ```
+
+5. **Build and install** in a second terminal:
+
+   ```sh
+   bun run android
+   ```
+
+6. If the app shows a red screen saying it cannot reach the development server, forward Metro's
+   port and reload:
+
+   ```sh
+   adb reverse tcp:8081 tcp:8081
+   ```
+
+7. Pair the kiosk with a code from the dashboard.
+
+The phone and computer must be on the same network, and Windows Firewall must allow port 8000
+(the API) for the kiosk to reach a local server.
+
+## Setting up the device for kiosk use
+
+- Plug it in permanently and mount it at face height with even, front-facing light.
+  Strong light behind the person makes recognition fail.
+- Turn on **Keep screen awake**, **Show over lock screen** and **Pin app** in the kiosk settings.
+- Set the phone's date, time and time zone to **automatic**, then turn on
+  **Require automatic date & time**.
+- Keep Wi-Fi on. Offline punches are saved, but faces enrolled on other kiosks only arrive
+  after a sync.
+- Turn off battery optimization for the app so Android does not stop it.
+
+## Project layout
+
+```
+App.tsx                  Pairing vs. kiosk screen, settings load
+src/PairingScreen.tsx    Enter the pairing code
+src/KioskScreen.tsx      Camera, recognition, punching, cooldown, sync
+src/EnrollFlow.tsx       Manager enrollment (5 samples per employee)
+src/ManagerCode.tsx      6-digit code that unlocks Enroll and Settings
+src/SettingsPanel.tsx    Device and feedback switches
+src/useFaceEngine.ts     Detection, liveness and matching thresholds
+src/kiosk.ts             API client, Keychain credentials, offline cache and punch queue
+src/device-settings.ts   Settings storage and the native KioskDevice bridge
+specs/                   TurboModule spec for KioskDevice (codegen)
+android/.../KioskDeviceModule.kt   Native keep-awake, pinning, lock screen, network, tones
+modules/react-native-face-recognition   Vendored Margelo face recognizer (Nitro module)
 ```
 
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
+## Scripts
 
 ```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+bun start          # Metro dev server
+bun run android    # build and install the debug app
+bun run lint       # ESLint
+bunx tsc --noEmit  # typecheck
+bun run test       # Jest
 ```
 
-### iOS
+## Before a release
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+- Move `API_URL` in `src/config.ts` from the hard-coded LAN IP into build configuration.
+- Create a release keystore and signing config. `android/app/debug.keystore` is the standard
+  debug key; never commit the release keystore or its passwords.
+- Remove the legacy `hazripro-kiosk` Keychain fallback in `src/kiosk.ts` once every kiosk has
+  run a post-rebrand build.
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+## Troubleshooting
 
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- **Network request failed when pairing.** `API_URL` is wrong or the phone cannot reach it. Open
+  the URL in the phone's browser to check, and allow port 8000 through the firewall.
+- **Error 500 from the development server, or "Failed to get NitroModules".** Stop Metro, then run
+  `bun start --reset-cache` and rebuild with `bun run android`.
+- **Poor or slow recognition.** Improve the lighting, clean the camera, and re-enroll the person
+  in the same light the kiosk will be used in.
+- **Logs.** `adb logcat *:S ReactNativeJS:V AndroidRuntime:E` shows JavaScript logs and crashes.

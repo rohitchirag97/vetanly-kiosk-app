@@ -1,0 +1,14 @@
+BasedOnStyle: LLVM
+Standard: c++20
+ColumnLimit: 80
+DerivePointerAlignment: false
+PointerAlignment: Left
+BinPackArguments: false
+BinPackParameters: OnePerLine
+SortIncludes: false
+SpacesBeforeTrailingComments: 2
+PenaltyReturnTypeOnItsOwnLine: 200
+IndentCaseLabels: true
+AllowShortFunctionsOnASingleLine: Empty
+PackConstructorInitializers: NextLine
+BreakStringLiterals: false

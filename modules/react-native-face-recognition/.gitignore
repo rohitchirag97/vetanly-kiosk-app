@@ -1,0 +1,6 @@
+# tsconfig sets "composite": true, so tsc always emits this build stamp.
+# It is a build artifact and must not be committed.
+tsconfig.tsbuildinfo
+
+# Output of `bun run build` (react-native-builder-bob).
+lib/

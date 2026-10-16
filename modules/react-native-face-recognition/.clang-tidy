@@ -1,0 +1,12 @@
+Checks: >
+  -*,
+  clang-analyzer-*,
+  bugprone-use-after-move,
+  cppcoreguidelines-rvalue-reference-param-not-moved,
+  modernize-pass-by-value,
+  performance-*,
+  readability-const-return-type
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*/(cpp|android/src/main/cpp)/.*'
+ExcludeHeaderFilterRegex: '.*/(nitrogen|third_party|node_modules)/.*'
+FormatStyle: file
