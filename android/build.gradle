@@ -19,3 +19,11 @@ buildscript {
 }
 
 apply plugin: "com.facebook.react.rootproject"
+
+// Native libraries put their CMake build folders in node_modules/<long-name>/android/.cxx. Release builds there go past
+// Windows' 260-character path limit (ninja then loops "build.ninja still dirty"), so keep them under a short folder instead.
+subprojects { sub ->
+    sub.plugins.withId("com.android.library") {
+        sub.android.externalNativeBuild.cmake.buildStagingDirectory = new File(rootDir, "build/cxx/" + Integer.toHexString(sub.path.hashCode()))
+    }
+}

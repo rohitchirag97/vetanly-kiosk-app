@@ -141,13 +141,32 @@ bunx tsc --noEmit  # typecheck
 bun run test       # Jest
 ```
 
-## Before a release
+## Release build
 
-- Move `API_URL` in `src/config.ts` from the hard-coded LAN IP into build configuration.
-- Create a release keystore and signing config. `android/app/debug.keystore` is the standard
-  debug key; never commit the release keystore or its passwords.
-- Remove the legacy `hazripro-kiosk` Keychain fallback in `src/kiosk.ts` once every kiosk has
-  run a post-rebrand build.
+1. **API address**: `src/config.ts` must point at production (`https://api.vetanly.com/api/v1`).
+2. **Release key (once, keep it forever).** Every update must be signed with the same key, so back the
+   `.jks` file and its passwords up somewhere safe. Never commit them.
+
+   ```sh
+   keytool -genkeypair -v -storetype PKCS12 -keystore vetanly-kiosk-release.jks -alias vetanly-kiosk -keyalg RSA -keysize 2048 -validity 10000
+   ```
+
+3. **Tell Gradle where it is**, in your user-level `~/.gradle/gradle.properties` (on Windows
+   `C:SERS<YOU>.GRADLEGRADLE.PROPERTIES`), not in this repo:
+
+   ```properties
+   VETANLY_RELEASE_STORE_FILE=D:/keys/vetanly-kiosk-release.jks
+   VETANLY_RELEASE_STORE_PASSWORD=...
+   VETANLY_RELEASE_KEY_ALIAS=vetanly-kiosk
+   VETANLY_RELEASE_KEY_PASSWORD=...
+   ```
+
+4. **Version**: raise `versionCode` (by 1) and `versionName` in `android/app/build.gradle` for every release.
+5. **Build**: `cd android && ./gradlew assembleRelease`. The APK is
+   `android/app/build/outputs/apk/release/app-release.apk`. If the build prints
+   "signed with the DEBUG key", step 3 is missing.
+
+The app ID is `com.vetanlykiosk`. Do not change it once kiosks are installed: a different ID is a different app.
 
 ## Troubleshooting
 

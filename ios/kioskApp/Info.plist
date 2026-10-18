@@ -42,6 +42,10 @@
 	<array>
 		<string>arm64</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>The kiosk uses the front camera to recognize employees when they check in or out. Faces are matched on this device.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>The kiosk connects to your attendance server on the local network.</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

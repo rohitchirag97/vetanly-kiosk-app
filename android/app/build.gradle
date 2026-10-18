@@ -79,7 +79,9 @@ android {
 
     namespace "com.kioskapp"
     defaultConfig {
-        applicationId "com.kioskapp"
+        // The app's identity on devices and the Play Store; never change it after kiosks are installed.
+        // (The Kotlin package stays com.kioskapp: namespace and applicationId are independent.)
+        applicationId "com.vetanlykiosk"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -92,15 +94,28 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        // The release key and its passwords live outside git, in ~/.gradle/gradle.properties (see README).
+        if (project.hasProperty('VETANLY_RELEASE_STORE_FILE')) {
+            release {
+                storeFile file(VETANLY_RELEASE_STORE_FILE)
+                storePassword VETANLY_RELEASE_STORE_PASSWORD
+                keyAlias VETANLY_RELEASE_KEY_ALIAS
+                keyPassword VETANLY_RELEASE_KEY_PASSWORD
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            // Signed with the Vetanly release key when it is configured; otherwise with the debug key, for local testing only.
+            if (signingConfigs.findByName('release') != null) {
+                signingConfig signingConfigs.release
+            } else {
+                logger.warn("WARNING: VETANLY_RELEASE_* not set, so this release build is signed with the DEBUG key. Do not install it on customer kiosks.")
+                signingConfig signingConfigs.debug
+            }
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
         }

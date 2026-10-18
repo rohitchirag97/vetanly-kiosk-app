@@ -219,6 +219,13 @@ std::vector<NativeRecognizedFace> FaceEngine::recognizeFaces(
     _recentMatches.clear();
     _pendingRecognitions.clear();
     releaseIdleModelsLocked();
+  } else {
+    // Load as soon as enrollments exist (usually the first idle frame) so the
+    // first person in front of the kiosk doesn't wait seconds for model loads.
+    _recognizer.ensureLoaded(_config, _memoryInfo, _enrollments.index());
+    if (_config.livenessEnabled) {
+      _liveness.ensureLoaded(_config, _memoryInfo);
+    }
   }
 
   for (RecentMatch& match : _recentMatches) {
@@ -280,12 +287,6 @@ std::vector<NativeRecognizedFace> FaceEngine::recognizeFaces(
 
   const bool willRecognize =
       didRunDetector && recognitionCadenceElapsed && !faceCandidates.empty();
-  if (willRecognize) {
-    _recognizer.ensureLoaded(_config, _memoryInfo, _enrollments.index());
-    if (_config.livenessEnabled) {
-      _liveness.ensureLoaded(_config, _memoryInfo);
-    }
-  }
 
   std::vector<NativeRecognizedFace> recognizedFaces;
   std::vector<RecentMatch> nextRecentMatches;

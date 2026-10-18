@@ -27,8 +27,6 @@ export class RejectedError extends Error {}
 export const FACE_MODEL = { modelName: 'sface', modelVersion: '2021dec' };
 
 const SERVICE = 'vetanly-kiosk';
-// shortcut: kiosks paired before the rebrand stored their key here; drop once every kiosk has opened the new build.
-const LEGACY_SERVICE = 'hazripro-kiosk';
 const DIRECTORY_KEY = 'kiosk-directory';
 const QUEUE_KEY = 'kiosk-punch-queue';
 const REQUEST_TIMEOUT_MS = 8_000;
@@ -42,19 +40,11 @@ const saveCredentials = (kiosk: KioskCredentials) =>
 
 export const loadCredentials = async (): Promise<KioskCredentials | null> => {
   const stored = await Keychain.getGenericPassword({ service: SERVICE });
-  if (stored) return JSON.parse(stored.password);
-  // Move a pre-rebrand key over once, so the kiosk stays paired.
-  const legacy = await Keychain.getGenericPassword({ service: LEGACY_SERVICE });
-  if (!legacy) return null;
-  const kiosk: KioskCredentials = JSON.parse(legacy.password);
-  await saveCredentials(kiosk);
-  await Keychain.resetGenericPassword({ service: LEGACY_SERVICE });
-  return kiosk;
+  return stored ? JSON.parse(stored.password) : null;
 };
 
 export const clearCredentials = async () => {
   await Keychain.resetGenericPassword({ service: SERVICE });
-  await Keychain.resetGenericPassword({ service: LEGACY_SERVICE });
   // Another organization may pair this device next, so drop its faces. Unsent punches are kept:
   // if the same kiosk is paired again they still sync, otherwise flushPunches discards them.
   await AsyncStorage.removeItem(DIRECTORY_KEY);
