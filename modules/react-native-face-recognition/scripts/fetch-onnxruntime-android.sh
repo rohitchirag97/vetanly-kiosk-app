@@ -2,8 +2,8 @@
 # Vendors the Android ONNX Runtime native libraries from the official
 # onnxruntime-android AAR into third_party/onnxruntime/android/<abi>/.
 #
-# Headers are committed; only the arm64-v8a libonnxruntime.so (gitignored,
-# ~17 MB) is fetched here. Run once after cloning before an Android build.
+# Headers are committed; only libonnxruntime.so for arm64-v8a and armeabi-v7a (gitignored,
+# ~29 MB) is fetched here. Run once after cloning before an Android build.
 set -euo pipefail
 
 ORT_VERSION="${ORT_VERSION:-1.20.0}"
@@ -21,9 +21,9 @@ unzip -q "$TMP/ort.aar" -d "$TMP/ort"
 mkdir -p "$DEST/headers"
 cp "$TMP"/ort/headers/*.h "$DEST/headers/"
 
-# arm64-v8a only: every Android device this ships to is 64-bit ARM, and the
-# other ABIs cost ~50 MB of vendored binaries for builds nobody runs.
-for abi in arm64-v8a; do
+# arm64-v8a is the default build; armeabi-v7a is only for the separate 32-bit APK
+# (old budget phones). x86 ABIs are skipped: no kiosk runs them.
+for abi in arm64-v8a armeabi-v7a; do
   mkdir -p "$DEST/$abi"
   cp "$TMP/ort/jni/$abi/libonnxruntime.so" "$DEST/$abi/libonnxruntime.so"
   echo "  $abi/libonnxruntime.so"

@@ -188,6 +188,13 @@ std::unique_ptr<Ort::Session> createSession(
     FaceExecutionProvider provider,
     bool useSharedArena,
     std::span<const SessionDimensionOverride> dimensionOverrides) {
+#if defined(__ANDROID__) && defined(__arm__)
+  // 32-bit builds only target old budget phones, whose NNAPI drivers are slow
+  // or broken; XNNPACK on the CPU is the dependable fast path there.
+  if (provider == FaceExecutionProvider::AUTO) {
+    provider = FaceExecutionProvider::CPU;
+  }
+#endif
   // Every step of the provider-fallback ladder builds the same session and
   // varies only the provider; keep the shared arguments in one place.
   const auto makeSession = [&](FaceExecutionProvider sessionProvider) {
