@@ -38,7 +38,7 @@ type Props = {
 };
 
 export function EnrollFlow({ kiosk, recognizer, bridge, employees, enrolledIds, onClose }: Props) {
-  const [step, setStep] = useState<'pick' | 'capture'>('pick');
+  const [step, setStep] = useState<'pick' | 'consent' | 'capture'>('pick');
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [attempt, setAttempt] = useState(0);
 
@@ -49,11 +49,14 @@ export function EnrollFlow({ kiosk, recognizer, bridge, employees, enrolledIds, 
         enrolledIds={enrolledIds}
         onPick={(picked) => {
           setEmployee(picked);
-          setStep('capture');
+          setStep('consent');
         }}
         onClose={onClose}
       />
     );
+  }
+  if (step === 'consent') {
+    return <ConsentStep employee={employee} onAgree={() => setStep('capture')} onBack={() => setStep('pick')} />;
   }
   return (
     <CaptureStep
@@ -116,6 +119,28 @@ function PickStep({
         )}
       />
       <Button label="Done" onPress={onClose} secondary />
+    </View>
+  );
+}
+
+// Biometric consent (Google Play policy, India's DPDP Act): the employee agrees before any face data is captured.
+function ConsentStep({ employee, onAgree, onBack }: { employee: Employee; onAgree: () => void; onBack: () => void }) {
+  return (
+    <View style={ui.panel}>
+      <Text style={ui.title}>Face data consent</Text>
+      <Text style={styles.consentText}>
+        {employee.name}, to mark your attendance with your face, this kiosk will scan your face and save a face
+        template: a set of numbers made from your face, not a photo.
+      </Text>
+      <Text style={styles.consentText}>
+        It is stored securely by Vetanly for your employer and used only to recognise you when you mark attendance.
+        Your employer can delete it at any time; ask your manager if you want it removed.
+      </Text>
+      <Text style={styles.consentText}>Do you agree?</Text>
+      <View style={ui.row}>
+        <Button label="No, go back" onPress={onBack} secondary />
+        <Button label="I agree" onPress={onAgree} />
+      </View>
     </View>
   );
 }
@@ -254,6 +279,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F9FAFB',
   },
   list: { flex: 1 },
+  consentText: { fontSize: 16, lineHeight: 23, color: colors.text },
   item: { paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   itemName: { fontSize: 17, fontWeight: '600', color: colors.text },
   itemMeta: { fontSize: 14, color: colors.muted, marginTop: 2 },
